@@ -1,13 +1,14 @@
 [package]
 name = "pca9685_lib"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jake Armstrong <Lainkai@users.noreply.github.com>"]
 edition = "2018"
 license-file = "license.txt"
 keywords = ["i2c", "pwm"]
-description = "A library for communicating to a PCA9685 Chip for Raspberry Pi. Docs: https://team3487-redpriderobotics.github.io/pca9685_lib/pca9685_lib/"
+description = "A library for communicating to a PCA9685 Chip for Raspberry Pi."
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+documentation = "https://team3487-redpriderobotics.github.io/pca9685_lib/pca9685_lib/"
 
 [dependencies]
-rppal = "0.11.2"
+rppal = "0.11.3"
 async-std = "1.6.1"
