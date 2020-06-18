@@ -94,19 +94,25 @@ impl PCA9685 {
         Ok(dev)
     }
     /// Restarts the deice and sets a prescale
+    /// 0 is for using a default prescale.
     /// # Panics
     /// If the prescale is less than the minium, or greater than the max, 
     /// this function will panic.
     pub async fn begin(&mut self, prescale: u8 ) -> Result<(), i2c::Error> {
         let prescale = match prescale {
+            p if p == 0 => {
+                return self.set_pwm_freq(1000.0).await;
+            }
             p if p < PCA9685_PRESCALE_MIN => panic!("Prescale is less than it should be!"),
             p if p > PCA9685_PRESCALE_MAX => panic!("Prescale is greater than it should be!"),
-            _ => prescale
+            _ => {
+                if let Err(e) = self.set_ext_clock(prescale).await {
+                    return Err(e);
+                }
+            }
         };
 
-        if let Err(e) = self.set_ext_clock(prescale).await {
-            return Err(e);
-        }
+        
 
         self.set_osc_frequency(self.oscillator_freq);
         self.reset().await
