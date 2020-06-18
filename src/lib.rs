@@ -99,7 +99,7 @@ impl PCA9685 {
     /// If the prescale is less than the minium, or greater than the max, 
     /// this function will panic.
     pub async fn begin(&mut self, prescale: u8 ) -> Result<(), i2c::Error> {
-        let prescale = match prescale {
+        match prescale {
             p if p == 0 => {
                 return self.set_pwm_freq(1000.0).await;
             }
