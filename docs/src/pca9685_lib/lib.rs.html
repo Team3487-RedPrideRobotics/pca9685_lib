@@ -368,6 +368,12 @@
 <span id="368">368</span>
 <span id="369">369</span>
 <span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">rppal</span>::<span class="ident">i2c</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Duration</span>;
@@ -465,19 +471,25 @@
         <span class="prelude-val">Ok</span>(<span class="ident">dev</span>)
     }
     <span class="doccomment">/// Restarts the deice and sets a prescale</span>
+    <span class="doccomment">/// 0 is for using a default prescale.</span>
     <span class="doccomment">/// # Panics</span>
     <span class="doccomment">/// If the prescale is less than the minium, or greater than the max, </span>
-    <span class="doccomment">/// this function will panic.</span>
+    <span class="doccomment">/// this function will panic. (Excluding 0)</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">begin</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">prescale</span>: <span class="ident">u8</span> ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">i2c</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">prescale</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">prescale</span> {
+        <span class="kw">match</span> <span class="ident">prescale</span> {
+            <span class="ident">p</span> <span class="kw">if</span> <span class="ident">p</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">return</span> <span class="self">self</span>.<span class="ident">set_pwm_freq</span>(<span class="number">1000.0</span>).<span class="kw">await</span>;
+            }
             <span class="ident">p</span> <span class="kw">if</span> <span class="ident">p</span> <span class="op">&lt;</span> <span class="ident">PCA9685_PRESCALE_MIN</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Prescale is less than it should be!&quot;</span>),
             <span class="ident">p</span> <span class="kw">if</span> <span class="ident">p</span> <span class="op">&gt;</span> <span class="ident">PCA9685_PRESCALE_MAX</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Prescale is greater than it should be!&quot;</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">prescale</span>
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">set_ext_clock</span>(<span class="ident">prescale</span>).<span class="kw">await</span> {
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>);
+                }
+            }
         };
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">set_ext_clock</span>(<span class="ident">prescale</span>).<span class="kw">await</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>);
-        }
+        
 
         <span class="self">self</span>.<span class="ident">set_osc_frequency</span>(<span class="self">self</span>.<span class="ident">oscillator_freq</span>);
         <span class="self">self</span>.<span class="ident">reset</span>().<span class="kw">await</span>
