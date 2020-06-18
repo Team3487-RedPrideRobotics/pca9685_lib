@@ -5,7 +5,7 @@ authors = ["Jake Armstrong <Lainkai@users.noreply.github.com>"]
 edition = "2018"
 license-file = "license.txt"
 keywords = ["i2c", "pwm"]
-description = "A library for communicating to a PCA9685 Chip for Raspberry Pi."
+description = "A library for communicating to a PCA9685 Chip for Raspberry Pi. Docs: https://team3487-redpriderobotics.github.io/pca9685_lib/pca9685_lib/"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
