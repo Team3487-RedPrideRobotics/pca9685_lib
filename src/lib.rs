@@ -23,35 +23,57 @@ pub const PCA9685_LED0_ON_H: u8 = 0x07;
 pub const PCA9685_LED0_OFF_L: u8 = 0x08;
 /// Where to turn the signal off, high byte
 pub const PCA9685_LED0_OFF_H: u8 = 0x09;
-/// Where to turn all leds on, low byte
-pub const PCA9685_ALLLED_ON_L: u8 = 0xFA;  /**< load all the LEDn_ON registers, low */
-pub const PCA9685_ALLLED_ON_H: u8 = 0xFB;  /**< load all the LEDn_ON registers, high */
-pub const PCA9685_ALLLED_OFF_L: u8 = 0xFC; /**< load all the LEDn_OFF registers, low */
-pub const PCA9685_ALLLED_OFF_H: u8 = 0xFD; /**< load all the LEDn_OFF registers,high */
-pub const PCA9685_PRESCALE: u8 = 0xFE;     /**< Prescaler for PWM output frequency */
-pub const PCA9685_TESTMODE: u8 = 0xFF;     /**< defines the test mode to be entered */
+/// Where to turn all signals on, low byte
+pub const PCA9685_ALLLED_ON_L: u8 = 0xFA;
+/// Where to turn all signals on, high byte  
+pub const PCA9685_ALLLED_ON_H: u8 = 0xFB;
+/// Where to turn all signals off, low byte
+pub const PCA9685_ALLLED_OFF_L: u8 = 0xFC; 
+/// Where to turn all signals off, high byte
+pub const PCA9685_ALLLED_OFF_H: u8 = 0xFD;
+/// Prescaler for PWM Output frequency
+pub const PCA9685_PRESCALE: u8 = 0xFE;
+/// Defines the test mode to be entered
+pub const PCA9685_TESTMODE: u8 = 0xFF;
 
 // MODE1 bits
-pub const MODE1_ALLCAL: u8 = 0x01;  /**< respond to LED All Call I2C-bus address */
-pub const MODE1_SUB3: u8 = 0x02;    /**< respond to I2C-bus subaddress 3 */
-pub const MODE1_SUB2: u8 = 0x04;    /**< respond to I2C-bus subaddress 2 */
-pub const MODE1_SUB1: u8 = 0x08;    /**< respond to I2C-bus subaddress 1 */
-pub const MODE1_SLEEP: u8 = 0x10;   /**< Low power mode. Oscillator off */
-pub const MODE1_AI: u8 = 0x20;      /**< Auto-Increment enabled */
-pub const MODE1_EXTCLK: u8 = 0x40;  /**< Use EXTCLK pin clock */
-pub const MODE1_RESTART: u8 = 0x80; /**< Restart enabled */
+/// Respond to LED All Call I2C-bus address
+pub const MODE1_ALLCAL: u8 = 0x01;
+/// respond to I2C-bus subaddress 3
+pub const MODE1_SUB3: u8 = 0x02;
+/// respond to I2C-bus subaddress 2 
+pub const MODE1_SUB2: u8 = 0x04;
+/// respond to I2C-bus subaddress 1
+pub const MODE1_SUB1: u8 = 0x08;
+/// Low power mode. Oscillator off
+pub const MODE1_SLEEP: u8 = 0x10;
+/// Auto-Increment enabled
+pub const MODE1_AI: u8 = 0x20;
+/// Use EXTCLK pin clock
+pub const MODE1_EXTCLK: u8 = 0x40;
+/// Restart Enabled
+pub const MODE1_RESTART: u8 = 0x80;
 // MODE2 bits
-pub const MODE2_OUTNE_0: u8 = 0x01; /**< Active LOW output enable input */
-pub const MODE2_OUTNE_1: u8 = 0x02; /**< Active LOW output enable input - high impedience */
-pub const MODE2_OUTDRV: u8 = 0x04; /**< totem pole structure vs open-drain */
-pub const MODE2_OCH: u8 = 0x08;    /**< Outputs change on ACK vs STOP */
-pub const MODE2_INVRT: u8 = 0x10;  /**< Output logic state inverted */
+///Active LOW output enable input
+pub const MODE2_OUTNE_0: u8 = 0x01;
+/// Active LOW output enable input - high impedence
+pub const MODE2_OUTNE_1: u8 = 0x02;
+/// totem pole structure vs open-drain
+pub const MODE2_OUTDRV: u8 = 0x04;
+/// Outputs change on ACK vs STOP 
+pub const MODE2_OCH: u8 = 0x08;
+/// Output logic state inverted
+pub const MODE2_INVRT: u8 = 0x10;
 
-pub const FREQUENCY_OSCILLATOR: u32 = 25000000; /**< Int. osc. frequency in datasheet */
+/// Int. osc. frequency in datasheet
+pub const FREQUENCY_OSCILLATOR: u32 = 25000000; /**<  */
 
-pub const PCA9685_PRESCALE_MIN: u8 = 3;   /**< minimum prescale value */
-pub const PCA9685_PRESCALE_MAX: u8 = 255; /**< maximum prescale value */
+/// minimum prescale value
+pub const PCA9685_PRESCALE_MIN: u8 = 3;
+/// Maximum prescale value
+pub const PCA9685_PRESCALE_MAX: u8 = 255;
 
+/// A Representation of a PCA9685 Chip
 pub struct PCA9685 {
     address: u8,
     bus: i2c::I2c,
@@ -59,6 +81,7 @@ pub struct PCA9685 {
 }
 
 impl PCA9685 {
+    /// Creates a new PCA9865
     pub fn new(address: u8, bus: i2c::I2c) -> Result<PCA9685, i2c::Error> {
         let mut dev = PCA9685 {
             address,
@@ -70,7 +93,10 @@ impl PCA9685 {
         }
         Ok(dev)
     }
-
+    /// Restarts the deice and sets a prescale
+    /// # Panics
+    /// If the prescale is less than the minium, or greater than the max, 
+    /// this function will panic.
     pub async fn begin(&mut self, prescale: u8 ) -> Result<(), i2c::Error> {
         let prescale = match prescale {
             p if p < PCA9685_PRESCALE_MIN => panic!("Prescale is less than it should be!"),
@@ -85,7 +111,7 @@ impl PCA9685 {
         self.set_osc_frequency(self.oscillator_freq);
         self.reset().await
     }
-
+    /// Send a reset command to the chip
     pub async fn reset(&mut self) -> Result<(), rppal::i2c::Error> {
         let res = self.bus.write(&vec![PCA9685_MODE1, MODE1_RESTART]);
         if let Err(e) = res {
@@ -95,7 +121,7 @@ impl PCA9685 {
         task::sleep(Duration::from_millis(10)).await;
         Ok(())
     }
-
+    /// Put the chip into sleep mode
     pub async fn sleep(&mut self) -> Result<(), rppal::i2c::Error> {
         let mut buf = vec![0 as u8];
         if let Err(e) = self.bus.write_read(&vec![PCA9685_MODE1], &mut buf) {
@@ -113,7 +139,7 @@ impl PCA9685 {
 
         Ok(())
     }
-
+    /// Awaken the chip out of sleep mode
     pub async fn wakeup(&mut self) -> Result<(), rppal::i2c::Error> {
         let mut buf = vec![0 as u8];
         if let Err(e) = self.bus.write_read(&vec![PCA9685_MODE1], &mut buf) {
@@ -129,7 +155,9 @@ impl PCA9685 {
 
         Ok(())
     }
-
+    /// Sets the pwm output of a pin based on the input of microseconds
+    /// 
+    /// **Imprecise:** This function is not 100% accurate due to the nature of the chip.
     pub fn write_micros(&mut self, channel: u8, micros: u16) -> Result<(), i2c::Error> {
 
         let pulse = micros;
@@ -153,7 +181,11 @@ impl PCA9685 {
 
         Ok(())
     }
-    
+    /// Sets the PWM frequency for the entire chip, up to ~1.6 KHz
+    /// # Panics
+    /// This function will panic if the frequency is not within 1 < freq < 3052
+    /// 
+    /// **Imprecise:** This function is not 100% accurate due to the nature of the chip.
     pub async fn set_pwm_freq(&mut self, freq: f32) -> Result<(), rppal::i2c::Error> {
         match freq {
             f if f < 1.0 => panic!("Frequency Cannot Be Lower than 1!"),
@@ -199,10 +231,43 @@ impl PCA9685 {
         Ok(())
         
     }
+    /// Helper to set pin PWM Output. Sets pin wihtout having to deal with
+    /// on/off tick placement and properly handles a zero value as completely off and
+    /// 4095 as completely on
+    pub fn set_pin(&mut self, channel: u8, mut on_tick: u16, invert: bool) -> Result<usize,rppal::i2c::Error> {
+        if on_tick > 4095 {
+            on_tick = 4095;
+        }
 
+        if invert {
+            if on_tick == 0 {
+                self.set_pwm(channel, 4096, 0)
+            } else if on_tick == 4095 {
+                self.set_pwm(channel, 0, 4096)
+            } else {
+                self.set_pwm(channel, 0, 4095-on_tick)
+            }
+        } else {
+            if on_tick == 4095 {
+                self.set_pwm(channel, 4096, 0)
+            } else if on_tick == 0 {
+                self.set_pwm(channel, 0, 4096)
+            } else {
+                self.set_pwm(channel, 0, on_tick)
+            }
+        }
+
+    }
+    /// Set the PWM output of one of the pins on the chip
+    /// # Panics
+    /// This function will panic if channel is > 15
     pub fn set_pwm(&mut self, channel: u8, on: u16, off: u16) -> Result<usize, rppal::i2c::Error> {
         let on_bytes = on.to_be_bytes();
         let off_bytes = off.to_be_bytes();
+
+        if channel > 15 {
+            panic!("There are only 16 channels on the chip.");
+        }
 
         self.bus.write(&vec![
             PCA9685_LED0_ON_L + 4 * channel,
@@ -222,13 +287,14 @@ impl PCA9685 {
     pub fn set_osc_frequency(&mut self, freq: u32) {
         self.oscillator_freq = freq;
     }
-
+    /// Just returns the private prescale value. (PCA9685 doesn't have introspection)
     pub fn get_prescale(&mut self) -> (usize, i2c::Result<()>) {
         let mut buf = vec![0 as u8];
         let result = self.bus.write_read( &vec![PCA9685_PRESCALE],&mut buf[..]);
         ((*buf.get(0).unwrap()).into(), result)
     }
 
+    ///Sets EXTCLK pin to use the external clock.
     pub async fn set_ext_clock(&mut self, prescale: u8) -> Result<(), rppal::i2c::Error> {
         let mut buf = vec![0 as u8];
         let result = self.bus.write_read(&vec![PCA9685_MODE1], &mut buf);
@@ -259,6 +325,34 @@ impl PCA9685 {
         if let Err(e) = self.bus.write(&vec![
             PCA9685_MODE1,
             (newmode & !MODE1_SLEEP) | MODE1_RESTART | MODE1_AI
+        ]) {
+            return Err(e);
+        }
+
+        Ok(())
+    }
+    /// Sets the output mode of the PCA9685 to either open drain or push pull / totempole
+    /// # Warning
+    /// LEDs with integrated zener diodes should
+    /// only be driven in open drain mode.
+    pub fn set_output_mode(&mut self, totempole: bool) -> Result<(), rppal::i2c::Error> {
+        let mut buf = vec![0 as u8];
+        if let Err(e) = self.bus.write_read(
+            &vec![PCA9685_MODE2], &mut buf
+        ) {
+            return Err(e);
+        }
+
+        let oldmode = buf.get(0).unwrap();
+        let newmode: u8;
+        if totempole {
+            newmode = oldmode | MODE2_OUTDRV;
+        } else {
+            newmode = oldmode & !MODE2_OUTDRV;
+        }
+
+        if let Err(e) = self.bus.write(&vec![
+            PCA9685_MODE2, newmode
         ]) {
             return Err(e);
         }
