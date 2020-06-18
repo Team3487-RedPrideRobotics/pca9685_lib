@@ -1,0 +1,95 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `C:\Users\Jake Armstrong\.cargo\registry\src\github.com-1ecc6299db9ec823\smol-0.1.12\src\throttle.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>throttle.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../smol/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">//! Throttle tasks if they poll too many I/O operations without yielding.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This is used to prevent futures from running forever. Once a certain number of I/O operation is</span>
+<span class="doccomment">//! hit in a single run, I/O operations will begin returning</span>
+<span class="doccomment">//! [`Poll::Pending`][`std::task::Poll::Pending`] even if they&#39;re ready.</span>
+
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">cell</span>::<span class="ident">Cell</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">task</span>::{<span class="ident">Context</span>, <span class="ident">Poll</span>};
+
+<span class="kw">use</span> <span class="ident">scoped_tls_hkt</span>::<span class="ident">scoped_thread_local</span>;
+
+<span class="macro">scoped_thread_local</span><span class="macro">!</span> {
+    <span class="doccomment">/// Number of times the current task is allowed to poll I/O operations.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// When this budget is used up, I/O operations will wake the current task and return</span>
+    <span class="doccomment">/// [`Poll::Pending`][`std::task::Poll::Pending`].</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This thread-local is set before running any task.</span>
+    <span class="kw">static</span> <span class="ident">BUDGET</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>
+}
+
+<span class="doccomment">/// Sets an I/O budget for polling a future.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Once this budget is exceeded, polled I/O operations will always wake the current task and</span>
+<span class="doccomment">/// return [`Poll::Pending`][`std::task::Poll::Pending`].</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// We throttle I/O this way in order to prevent futures from running for</span>
+<span class="doccomment">/// too long and thus starving other futures.</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">setup</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">poll</span>: <span class="kw">impl</span> <span class="ident">FnOnce</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span> {
+    <span class="comment">// This is a fairly arbitrary number that seems to work well in practice.</span>
+    <span class="ident">BUDGET</span>.<span class="ident">set</span>(<span class="kw-2">&amp;</span><span class="ident">Cell</span>::<span class="ident">new</span>(<span class="number">200</span>), <span class="ident">poll</span>)
+}
+
+<span class="doccomment">/// Returns [`Poll::Pending`] if the I/O budget has been used up.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [`Poll::Pending`]: `std::task::Poll::Pending`</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">poll</span>(<span class="ident">cx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poll</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="comment">// Decrement the budget and check if it was zero.</span>
+    <span class="kw">if</span> <span class="ident">BUDGET</span>.<span class="ident">is_set</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">BUDGET</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">b</span>.<span class="ident">replace</span>(<span class="ident">b</span>.<span class="ident">get</span>().<span class="ident">saturating_sub</span>(<span class="number">1</span>))) <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+        <span class="comment">// Make sure to wake the current task. The task is not *really* pending, we&#39;re just</span>
+        <span class="comment">// artificially throttling it to let other tasks be run.</span>
+        <span class="ident">cx</span>.<span class="ident">waker</span>().<span class="ident">wake_by_ref</span>();
+        <span class="kw">return</span> <span class="ident">Poll</span>::<span class="ident">Pending</span>;
+    }
+    <span class="ident">Poll</span>::<span class="ident">Ready</span>(())
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "smol";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
