@@ -97,7 +97,7 @@ impl PCA9685 {
     /// 0 is for using a default prescale.
     /// # Panics
     /// If the prescale is less than the minium, or greater than the max, 
-    /// this function will panic.
+    /// this function will panic. (Excluding 0)
     pub async fn begin(&mut self, prescale: u8 ) -> Result<(), i2c::Error> {
         match prescale {
             p if p == 0 => {
