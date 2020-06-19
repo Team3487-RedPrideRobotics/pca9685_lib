@@ -218,7 +218,7 @@ impl PCA9685 {
 
 }
 
-/// Sets the prescale value for the chip from a given frequency
+/// Gets a prescale value for the chip from a given frequency
 pub fn prescale_from_freq(clock_speed: u32, freq: u16) -> u8 {
     (((clock_speed as f32) / (4096 as f32 * freq as f32)) - 1.0) as u8
 }
