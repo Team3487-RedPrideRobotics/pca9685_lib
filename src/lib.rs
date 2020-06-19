@@ -163,7 +163,7 @@ impl PCA9685 {
 
     /// Set The Prescale Value from a given frequency
     /// # Warnings
-    /// - In order to change the prescale, the chip must be put into sleep
+    /// - In order to change the prescale, the chip must be put into sleep.
     /// Make sure that anything important be safetied before use.
     /// 
     /// - This function tries to be as close as possible to the given frequency.
