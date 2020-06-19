@@ -165,7 +165,7 @@ impl PCA9685 {
             return Err(e);
         } {
             let old_prescale = prescale_buf.get(0).unwrap();
-            debug!(target: "PCA96585_events", "Old Prescale is {}", old_prescale);
+            debug!(target: "PCA9685_events", "Old Prescale is {}", old_prescale);
         }
         
         //Get the new prescale
