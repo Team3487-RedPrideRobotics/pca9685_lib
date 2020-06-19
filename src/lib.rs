@@ -129,7 +129,7 @@ impl PCA9685 {
         if let Err(e) = self.bus.write_read(&vec![MODE1], &mut debug_mode) {
             return Err(e);
         } else {
-            debug!("Mode: {:#b}", debug_mode.get(0).unwrap());
+            debug!(target: "PCA9686_events", "Mode: {:#b}", debug_mode.get(0).unwrap());
         }
 
         Ok(())
