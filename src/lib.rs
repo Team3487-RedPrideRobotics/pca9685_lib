@@ -107,7 +107,7 @@ impl PCA9685 {
         let mut mode = vec![0];
         self.bus.write_read(&vec![MODE1], &mut mode)?;
         let mode = mode.get(0).unwrap();
-        debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
+        debug!(target: "PCA9685_events", "Current mode {:#b}", mode);
 
         //Clear Sleep bit
         self.bus.write(&vec![MODE1, mode - mode1::SLEEP])?;
@@ -123,9 +123,9 @@ impl PCA9685 {
         if let Err(e) = self.bus.write_read(&vec![MODE1], &mut debug_mode) {
             return Err(e);
         } else {
-            debug!(target: "PCA9686_events", "Mode: {:#b}", debug_mode.get(0).unwrap());
+            debug!(target: "PCA9685_events", "Mode: {:#b}", debug_mode.get(0).unwrap());
         }
-        info!(target: "PCA9686_events", "Started Chip!");
+        info!(target: "PCA9685_events", "Started Chip!");
         Ok(())
     }
 
@@ -135,7 +135,7 @@ impl PCA9685 {
         let mut mode = vec![0];
         self.bus.write_read(&vec![MODE1], &mut mode)?;
         let mode = mode.get(0).unwrap();
-        debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
+        debug!(target: "PCA9685_events", "Current mode {:#b}", mode);
         
         //If chip is not in sleep
         if mode & mode1::SLEEP == 0 {
@@ -144,10 +144,10 @@ impl PCA9685 {
             if let Err(e) = self.bus.write_read(&vec![MODE1, mode + mode1::SLEEP], &mut buf) {
                 return Err(e);
             } else {
-                debug!(target: "PCA9686_events", "Mode: {:#b}", buf.get(0).unwrap());
+                debug!(target: "PCA9685_events", "Mode: {:#b}", buf.get(0).unwrap());
             }
         }
-        info!(target: "PCA9686_events","Put the chip to sleep!");
+        info!(target: "PCA9685_events","Put the chip to sleep!");
         Ok(())
     }
 
@@ -180,7 +180,7 @@ impl PCA9685 {
         if let Err(e) = self.bus.write_read(&vec![PRE_SCALE, prescale_val], &mut prescale_buf) {
             return Err(e);
         } else {
-            info!(target: "PCA96585_events","New Prescale is {:#X}", prescale_buf.get(0).unwrap());
+            info!(target: "PCA9685_events","New Prescale is {:#X}", prescale_buf.get(0).unwrap());
         }
         
         //Start the chip again
@@ -192,10 +192,10 @@ impl PCA9685 {
     /// Reads the prescale directly from the chip.
     pub fn read_prescale(&mut self) -> Result<u8, i2c::Error> {
         let mut prescale_buf = vec![0];
-        debug!(target: "PCA96585_events", "Reading prescale");
+        debug!(target: "PCA9685_events", "Reading prescale");
         self.bus.write_read(&vec![PRE_SCALE], &mut prescale_buf)?;
         let prescale = prescale_buf.get(0).unwrap();
-        debug!(target: "PCA96585_events", "Prescale is {}", prescale);
+        debug!(target: "PCA9685_events", "Prescale is {}", prescale);
         Ok(*prescale)
     }
 
@@ -233,7 +233,7 @@ impl PCA9685 {
         let mut mode = vec![0];
         self.bus.write_read(&vec![MODE1], &mut mode)?;
         let mode = mode.get(0).unwrap();
-        debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
+        debug!(target: "PCA9685_events", "Current mode {:#b}", mode);
 
         //Write logic 1 to sleep & EXTCLK,
         self.bus.write(&vec![MODE1, mode + mode1::EXTCLK])?;
@@ -264,13 +264,13 @@ impl PCA9685 {
             if mode & mode2::OUTDRV == mode2::OUTDRV {
                 //Change to 0
                 self.bus.write(&vec![MODE2, mode - mode2::OUTDRV])?;
-                info!(target: "PCA9686_events", "Set to Open-Drain");
+                info!(target: "PCA9685_events", "Set to Open-Drain");
             }
         } else {
             if mode & mode2::OUTDRV == 0 {
                 //Change to 1
                 self.bus.write(&vec![MODE2, mode + mode2::OUTDRV])?;
-                info!(target: "PCA9686_events", "Set to Totem Pole");
+                info!(target: "PCA9685_events", "Set to Totem Pole");
             }
         }
 
