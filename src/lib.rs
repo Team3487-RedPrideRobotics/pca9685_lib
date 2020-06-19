@@ -244,6 +244,38 @@ impl PCA9685 {
         Ok(())
     }
 
+    /// Set the output mode of the chip
+    /// Options: Open-Drain or Totem pole.
+    /// # Default
+    /// Totem pole
+    /// # Warnings
+    /// - LEDS with built in zener diodes should only be 
+    /// driven in open drain mode.
+    /// - **Untested**
+    pub fn set_output_mode(&mut self, open_drain: bool) -> Result<(), i2c::Error> {
+        //Get the old mode2
+        let mut mode = vec![0];
+        self.bus.write_read(&vec![MODE2], &mut mode)?;
+        let mode = mode.get(0).unwrap();
+        //If open drain mode
+        if open_drain {
+            //Since mode2::OUTDRV is default 1, if 1
+            if mode & mode2::OUTDRV == mode2::OUTDRV {
+                //Change to 0
+                self.bus.write(&vec![MODE2, mode - mode2::OUTDRV])?;
+                info!(target: "PCA9686_events", "Set to Open-Drain");
+            }
+        } else {
+            if mode & mode2::OUTDRV == 0 {
+                //Change to 1
+                self.bus.write(&vec![MODE2, mode + mode2::OUTDRV])?;
+                info!(target: "PCA9686_events", "Set to Totem Pole");
+            }
+        }
+
+        Ok(())
+    }
+
 }
 
 /// Gets a prescale value for the chip from a given frequency
