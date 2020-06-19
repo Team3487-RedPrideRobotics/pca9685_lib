@@ -224,10 +224,9 @@ impl PCA9685 {
     /// - Max frequency is 50 Mhz
     /// - **Untested**
     /// This is untested. Please submit a new issue if there are any problems.
-    
     pub async fn set_external_clock(&mut self, clock_speed: u32) -> Result<(), i2c::Error> {
         // Go to sleep
-        self.sleep();
+        self.sleep()?;
 
         //Get the current mode
         let mut mode = vec![0];
