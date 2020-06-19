@@ -131,7 +131,7 @@ impl PCA9685 {
         } else {
             debug!(target: "PCA9686_events", "Mode: {:#b}", debug_mode.get(0).unwrap());
         }
-
+        info!(target: "PCA9686_events", "Started Chip!");
         Ok(())
     }
 
@@ -154,6 +154,47 @@ impl PCA9685 {
             } else {
                 debug!(target: "PCA9686_events", "Mode: {:#b}", buf.get(0).unwrap());
             }
+        }
+        info!(target: "PCA9686_events","Put the chip to sleep!");
+        Ok(())
+    }
+
+    /// Set The Prescale Value from a given frequency
+    /// # Warnings
+    /// In order to change the prescale, the chip must be put into sleep
+    /// Make sure that anything important be safetied before use.
+    pub async fn set_prescale_fr(&mut self, frequency: u16) -> Result<(), i2c::Error> {
+        if let Err(e) = self.sleep() {
+            return Err(e);
+        }
+
+        //Get the old prescale for debug purposes
+        let mut prescale_buf = vec![0];
+        if let Err(e) = self.bus.write_read(&vec![PRE_SCALE], &mut prescale_buf) {
+            return Err(e);
+        } {
+            let old_prescale = prescale_buf.get(0).unwrap();
+            debug!(target: "PCA96585_events", "Old Prescale is {}", old_prescale);
+        }
+        
+        //Get the new prescale
+        let mut prescale_val = prescale_from_freq(self.oscillator_freq, frequency);
+        match prescale_val {
+            v if v > PRESCALE_MAX => prescale_val = PRESCALE_MAX,
+            v if v < PRESCALE_MIN => prescale_val = PRESCALE_MIN,
+            _ => {}
+        }
+
+        //Set the Prescale
+        if let Err(e) = self.bus.write_read(&vec![PRE_SCALE, prescale_val], &mut prescale_buf) {
+            return Err(e);
+        } else {
+            info!(target: "PCA96585_events","New Prescale is {:#X}", prescale_buf.get(0).unwrap());
+        }
+        
+        //Start the chip again
+        if let Err(e) = self.start().await {
+            return Err(e);
         }
 
         Ok(())
