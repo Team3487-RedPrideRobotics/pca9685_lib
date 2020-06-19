@@ -96,35 +96,27 @@ impl PCA9685 {
             bus,
             oscillator_freq: FREQUENCY_OSCILLATOR,
         };
-        if let Err(e) = dev.bus.set_slave_address(dev.address as u16) {
-            return Err(e);
-        }
+        dev.bus.set_slave_address(dev.address as u16)?;
         Ok(dev)
     }
 
-    /// Start of the PCA9865.
+    /// Start the PCA9865.
     /// The chip needs a little time to start.
     pub async fn start(&mut self) -> Result<(), i2c::Error> {
         //Read Mode 1
         let mut mode = vec![0];
-        if let Err(e) = self.bus.write_read(&vec![MODE1], &mut mode) {
-            return Err(e)
-        }
+        self.bus.write_read(&vec![MODE1], &mut mode)?;
         let mode = mode.get(0).unwrap();
         debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
 
         //Clear Sleep bit
-        if let Err(e) = self.bus.write(&vec![MODE1, mode - mode1::SLEEP]) {
-            return Err(e);
-        }
+        self.bus.write(&vec![MODE1, mode - mode1::SLEEP])?;
 
         //Wait for at least 500us, stabilize oscillator
         delay_for(Duration::from_micros(500)).await;
 
         // Write a logic 1 to bit 7 to clear, if needed
-        if let Err(e) = self.bus.write(&vec![MODE1, *mode]) {
-            return Err(e);
-        }
+        self.bus.write(&vec![MODE1, *mode])?;
 
         //Debug Check the Mode
         let mut debug_mode = vec![0];
@@ -141,9 +133,7 @@ impl PCA9685 {
     pub fn sleep(&mut self) -> Result<(), i2c::Error> {
         //Get the current mode
         let mut mode = vec![0];
-        if let Err(e) = self.bus.write_read(&vec![MODE1], &mut mode) {
-            return Err(e)
-        }
+        self.bus.write_read(&vec![MODE1], &mut mode)?;
         let mode = mode.get(0).unwrap();
         debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
         
@@ -168,10 +158,7 @@ impl PCA9685 {
     /// 
     /// - This function tries to be as close as possible to the given frequency.
     pub async fn set_prescale_fr(&mut self, frequency: u16) -> Result<(), i2c::Error> {
-        if let Err(e) = self.sleep() {
-            return Err(e);
-        }
-
+        self.sleep()?;
         //Get the old prescale for debug purposes
         let mut prescale_buf = vec![0];
         if let Err(e) = self.bus.write_read(&vec![PRE_SCALE], &mut prescale_buf) {
@@ -197,9 +184,7 @@ impl PCA9685 {
         }
         
         //Start the chip again
-        if let Err(e) = self.start().await {
-            return Err(e);
-        }
+        self.start().await?;
 
         Ok(())
     }
@@ -208,9 +193,7 @@ impl PCA9685 {
     pub fn read_prescale(&mut self) -> Result<u8, i2c::Error> {
         let mut prescale_buf = vec![0];
         debug!(target: "PCA96585_events", "Reading prescale");
-        if let Err(e) = self.bus.write_read(&vec![PRE_SCALE], &mut prescale_buf) {
-            return Err(e);
-        }
+        self.bus.write_read(&vec![PRE_SCALE], &mut prescale_buf)?;
         let prescale = prescale_buf.get(0).unwrap();
         debug!(target: "PCA96585_events", "Prescale is {}", prescale);
         Ok(*prescale)
@@ -226,19 +209,39 @@ impl PCA9685 {
         }
         
         //Write to the four registers
-        if let Err(e) = self.bus.write(&vec![LED0_ON_L + 4*channel, period_on.1]) {
-            return Err(e);
-        }
-        if let Err(e) = self.bus.write(&vec![LED0_ON_H, period_on.0]) {
-            return Err(e);
-        }
-        if let Err(e) = self.bus.write(&vec![LED0_OFF_L, period_off.1]) {
-            return Err(e);
-        }
-        if let Err(e) = self.bus.write(&vec![LED0_OFF_H, period_off.0]) {
-            return Err(e);
-        }
+        self.bus.write(&vec![LED0_ON_L + 4*channel, period_on.1])?;
+        self.bus.write(&vec![LED0_ON_H, period_on.0])?;
+        self.bus.write(&vec![LED0_OFF_L, period_off.1])?;
+        self.bus.write(&vec![LED0_OFF_H, period_off.0])?;
 
+        Ok(())
+    }
+
+    /// Set to use External Clock
+    /// # Warnings
+    /// - In order to use the EXTCLK pin, the chip must be put to sleep.
+    /// - In order to reset this mode, you have to run a power cycle (or software reset).
+    /// - Max frequency is 50 Mhz
+    /// - **Untested**
+    /// This is untested. Please submit a new issue if there are any problems.
+    
+    pub async fn set_external_clock(&mut self, clock_speed: u32) -> Result<(), i2c::Error> {
+        // Go to sleep
+        self.sleep();
+
+        //Get the current mode
+        let mut mode = vec![0];
+        self.bus.write_read(&vec![MODE1], &mut mode)?;
+        let mode = mode.get(0).unwrap();
+        debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
+
+        //Write logic 1 to sleep & EXTCLK,
+        self.bus.write(&vec![MODE1, mode + mode1::EXTCLK])?;
+
+        //Wake up
+        self.start().await?;
+
+        self.oscillator_freq = clock_speed;
         Ok(())
     }
 
