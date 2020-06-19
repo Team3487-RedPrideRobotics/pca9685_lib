@@ -1,6 +1,7 @@
 use rppal::i2c;
 use std::time::Duration;
 use log::{debug};
+use tokio::time::delay_for;
 
 /// Mode Register 1
 pub const MODE1: u8 = 0x00;
@@ -86,6 +87,7 @@ pub struct PCA9685 {
 }
 
 impl PCA9685 {
+
     /// Creates a new PCA9865
     pub fn new(address: u8, bus: i2c::I2c) -> Result<PCA9685, i2c::Error> {
         let mut dev = PCA9685 {
@@ -97,6 +99,40 @@ impl PCA9685 {
             return Err(e);
         }
         Ok(dev)
+    }
+
+    /// Start of the PCA9865
+    pub async fn start(&mut self) -> Result<(), i2c::Error> {
+        //Read Mode 1
+        let mut mode = vec![0];
+        if let Err(e) = self.bus.write_read(&vec![MODE1], &mut mode) {
+            return Err(e)
+        }
+        let mode = mode.get(0).unwrap();
+        debug!(target: "PCA9686_events", "Current mode {}", mode);
+
+        //Clear Sleep bit
+        if let Err(e) = self.bus.write(&vec![MODE1, mode - mode1::SLEEP]) {
+            return Err(e);
+        }
+
+        //Wait for at least 500us, stabilize oscillator
+        delay_for(Duration::from_micros(500)).await;
+
+        // Write a logic 1 to bit 7 to clear, if needed
+        if let Err(e) = self.bus.write(&vec![MODE1, *mode]) {
+            return Err(e);
+        }
+
+        //Debug Check the Mode
+        let mut debug_mode = vec![0];
+        if let Err(e) = self.bus.write_read(&vec![MODE1], &mut debug_mode) {
+            return Err(e);
+        } else {
+            debug!("Mode: {:#b}", debug_mode.get(0).unwrap());
+        }
+
+        Ok(())
     }
 
     /// Reads the prescale directly from the chip.
@@ -111,7 +147,6 @@ impl PCA9685 {
         Ok(*prescale)
     }
 
-    
 }
 
 /// Sets the prescale value for the chip from a given frequency

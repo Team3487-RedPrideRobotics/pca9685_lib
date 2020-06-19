@@ -12,3 +12,4 @@ documentation = "https://team3487-redpriderobotics.github.io/pca9685_lib/pca9685
 [dependencies]
 rppal = "0.11.3"
 log = "0.4.8"
+tokio = { version = "0.2", features = ["time"] }
