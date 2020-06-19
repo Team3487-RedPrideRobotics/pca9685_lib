@@ -279,7 +279,7 @@ impl PCA9685 {
     /// Gets the prescale value
     pub fn get_prescale(&mut self) -> Result<u8, i2c::Error> {
         let mut buf = vec![0];
-        self.bus.write_read(vec![PRE_SCALE], &mut buf)?;
+        self.bus.write_read(&vec![PRE_SCALE], &mut buf)?;
 
         Ok(*buf.get(0).unwrap())
 
