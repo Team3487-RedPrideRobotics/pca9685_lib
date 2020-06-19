@@ -135,6 +135,30 @@ impl PCA9685 {
         Ok(())
     }
 
+    /// Put the chip into sleep
+    pub fn sleep(&mut self) -> Result<(), i2c::Error> {
+        //Get the current mode
+        let mut mode = vec![0];
+        if let Err(e) = self.bus.write_read(&vec![MODE1], &mut mode) {
+            return Err(e)
+        }
+        let mode = mode.get(0).unwrap();
+        debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
+        
+        //If chip is not in sleep
+        if mode & mode1::SLEEP == 0 {
+            //Go to sleep
+            let mut buf = vec![0];
+            if let Err(e) = self.bus.write_read(&vec![MODE1, mode + mode1::SLEEP], &mut buf) {
+                return Err(e);
+            } else {
+                debug!(target: "PCA9686_events", "Mode: {:#b}", buf.get(0).unwrap());
+            }
+        }
+
+        Ok(())
+    }
+
     /// Reads the prescale directly from the chip.
     pub fn read_prescale(&mut self) -> Result<u8, i2c::Error> {
         let mut prescale_buf = vec![0];
