@@ -1,6 +1,6 @@
+use log::{debug, info};
 use rppal::i2c;
 use std::time::Duration;
-use log::{debug};
 use tokio::time::delay_for;
 
 /// Mode Register 1
