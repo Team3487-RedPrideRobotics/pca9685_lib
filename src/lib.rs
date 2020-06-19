@@ -72,7 +72,7 @@ pub mod mode2 {
 }
 
 /// Int. osc. frequency in datasheet
-pub const FREQUENCY_OSCILLATOR: u32 = 25000000;
+pub const FREQUENCY_OSCILLATOR: u32 = 25_000_000;
 
 /// minimum prescale value
 pub const PRESCALE_MIN: u8 = 0x03;
