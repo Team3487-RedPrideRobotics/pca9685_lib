@@ -102,6 +102,7 @@ impl PCA9685 {
     }
 
     /// Start of the PCA9865
+    /// The chip needs a little time to start.
     pub async fn start(&mut self) -> Result<(), i2c::Error> {
         //Read Mode 1
         let mut mode = vec![0];
@@ -161,8 +162,10 @@ impl PCA9685 {
 
     /// Set The Prescale Value from a given frequency
     /// # Warnings
-    /// In order to change the prescale, the chip must be put into sleep
+    /// - In order to change the prescale, the chip must be put into sleep
     /// Make sure that anything important be safetied before use.
+    /// 
+    /// - This function tries to be as close as possible to the given frequency.
     pub async fn set_prescale_fr(&mut self, frequency: u16) -> Result<(), i2c::Error> {
         if let Err(e) = self.sleep() {
             return Err(e);
