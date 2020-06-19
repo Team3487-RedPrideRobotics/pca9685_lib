@@ -201,6 +201,8 @@ impl PCA9685 {
 
     /// Set the pulse-widths for a channel.
     /// Channels range from 0 - 15.
+    /// Since the device uses 12bit accuracy,
+    /// the tuples are arranged as (most_significant, least_significant)
     /// # Panics
     /// The channel must be less than 16.
     pub fn set_channel(&mut self, channel: u8, period_on: (u8, u8), period_off: (u8, u8)) -> Result< (), i2c::Error> {
@@ -223,7 +225,6 @@ impl PCA9685 {
     /// - In order to reset this mode, you have to run a power cycle (or software reset).
     /// - Max frequency is 50 Mhz
     /// - **Untested**
-    /// This is untested. Please submit a new issue if there are any problems.
     pub async fn set_external_clock(&mut self, clock_speed: u32) -> Result<(), i2c::Error> {
         // Go to sleep
         self.sleep()?;
