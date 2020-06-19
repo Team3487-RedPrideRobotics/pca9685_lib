@@ -102,7 +102,7 @@ impl PCA9685 {
         Ok(dev)
     }
 
-    /// Start of the PCA9865
+    /// Start of the PCA9865.
     /// The chip needs a little time to start.
     pub async fn start(&mut self) -> Result<(), i2c::Error> {
         //Read Mode 1
@@ -161,7 +161,7 @@ impl PCA9685 {
         Ok(())
     }
 
-    /// Set The Prescale Value from a given frequency
+    /// Set the prescale value from a given frequency
     /// # Warnings
     /// - In order to change the prescale, the chip must be put into sleep.
     /// Make sure that anything important be safetied before use.
@@ -214,6 +214,32 @@ impl PCA9685 {
         let prescale = prescale_buf.get(0).unwrap();
         debug!(target: "PCA96585_events", "Prescale is {}", prescale);
         Ok(*prescale)
+    }
+
+    /// Set the pulse-widths for a channel.
+    /// Channels range from 0 - 15.
+    /// # Panics
+    /// The channel must be less than 16.
+    pub fn set_channel(&mut self, channel: u8, period_on: (u8, u8), period_off: (u8, u8)) -> Result< (), i2c::Error> {
+        if channel  > 16 {
+            panic!("Channel must be less than 16");
+        }
+        
+        //Write to the four registers
+        if let Err(e) = self.bus.write(&vec![LED0_ON_L + 4*channel, period_on.1]) {
+            return Err(e);
+        }
+        if let Err(e) = self.bus.write(&vec![LED0_ON_H, period_on.0]) {
+            return Err(e);
+        }
+        if let Err(e) = self.bus.write(&vec![LED0_OFF_L, period_off.1]) {
+            return Err(e);
+        }
+        if let Err(e) = self.bus.write(&vec![LED0_OFF_H, period_off.0]) {
+            return Err(e);
+        }
+
+        Ok(())
     }
 
 }
