@@ -109,7 +109,7 @@ impl PCA9685 {
             return Err(e)
         }
         let mode = mode.get(0).unwrap();
-        debug!(target: "PCA9686_events", "Current mode {}", mode);
+        debug!(target: "PCA9686_events", "Current mode {:#b}", mode);
 
         //Clear Sleep bit
         if let Err(e) = self.bus.write(&vec![MODE1, mode - mode1::SLEEP]) {
