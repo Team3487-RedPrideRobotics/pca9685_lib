@@ -72,12 +72,13 @@ pub mod mode2 {
 }
 
 /// Int. osc. frequency in datasheet
-pub const FREQUENCY_OSCILLATOR: u32 = 25000000; /**<  */
+pub const FREQUENCY_OSCILLATOR: u32 = 25000000;
 
 /// minimum prescale value
-pub const PRESCALE_MIN: u8 = 3;
+pub const PRESCALE_MIN: u8 = 0x03;
+
 /// Maximum prescale value
-pub const PRESCALE_MAX: u8 = 255;
+pub const PRESCALE_MAX: u8 = 0xFF;
 
 /// A Representation of a PCA9685 Chip
 pub struct PCA9685 {
