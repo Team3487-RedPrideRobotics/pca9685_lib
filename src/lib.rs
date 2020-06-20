@@ -103,6 +103,8 @@ impl PCA9685 {
     /// Start the PCA9865.
     /// The chip needs a little time to start.
     pub async fn start(&mut self) -> Result<(), i2c::Error> {
+        info!(target: "PCA9685_events", "Starting chip");
+
         //Read Mode 1
         let mut mode = vec![0];
         self.bus.write_read(&vec![MODE1], &mut mode)?;
@@ -110,13 +112,14 @@ impl PCA9685 {
         debug!(target: "PCA9685_events", "Current mode {:#b}", mode);
 
         //Clear Sleep bit
+        debug!(target: "PCA9685_events", "Writing to mode 1: {:#b}", mode-mode1::SLEEP);
         self.bus.write(&vec![MODE1, mode - mode1::SLEEP])?;
 
         //Wait for at least 500us, stabilize oscillator
         delay_for(Duration::from_micros(500)).await;
 
         // Write a logic 1 to bit 7 to clear, if needed
-        self.bus.write(&vec![MODE1, *mode])?;
+        self.bus.write(&vec![MODE1, (*mode-mode1::SLEEP)])?;
 
         //Debug Check the Mode
         let mut debug_mode = vec![0];
@@ -131,6 +134,7 @@ impl PCA9685 {
 
     /// Put the chip into sleep
     pub fn sleep(&mut self) -> Result<(), i2c::Error> {
+        info!(target: "PCA9685_events", "Going to sleep");
         //Get the current mode
         let mut mode = vec![0];
         self.bus.write_read(&vec![MODE1], &mut mode)?;
@@ -141,7 +145,9 @@ impl PCA9685 {
         if mode & mode1::SLEEP == 0 {
             //Go to sleep
             let mut buf = vec![0];
-            if let Err(e) = self.bus.write_read(&vec![MODE1, mode + mode1::SLEEP], &mut buf) {
+            let mode_sleep =  mode + mode1::SLEEP;
+            debug!(target: "PCA9685_events", "Writing sleep mode {:#b}", mode);
+            if let Err(e) = self.bus.write_read(&vec![MODE1,mode_sleep], &mut buf) {
                 return Err(e);
             } else {
                 debug!(target: "PCA9685_events", "Mode: {:#b}", buf.get(0).unwrap());
@@ -165,7 +171,7 @@ impl PCA9685 {
             return Err(e);
         } {
             let old_prescale = prescale_buf.get(0).unwrap();
-            debug!(target: "PCA9685_events", "Old Prescale is {}", old_prescale);
+            debug!(target: "PCA9685_events", "Old Prescale is {:#X}", old_prescale);
         }
         
         //Get the new prescale
