@@ -42,11 +42,11 @@ pub mod mode1 {
     
     /// Respond to LED All Call I2C-bus address
     pub const ALLCALL: u8 = 0x01;
-    /// respond to I2C-bus subaddress 3
+    /// Respond to I2C-bus subaddress 3
     pub const SUB3: u8 = 0x02;
-    /// respond to I2C-bus subaddress 2 
+    /// Respond to I2C-bus subaddress 2 
     pub const SUB2: u8 = 0x04;
-    /// respond to I2C-bus subaddress 1
+    /// Respond to I2C-bus subaddress 1
     pub const SUB1: u8 = 0x08;
     /// Low power mode. Oscillator off
     pub const SLEEP: u8 = 0x10;
@@ -63,7 +63,7 @@ pub mod mode2 {
     pub const OUTNE_0: u8 = 0x01;
     /// Active LOW output enable input - high impedence
     pub const OUTNE_1: u8 = 0x02;
-    /// totem pole structure vs open-drain
+    /// Totem pole structure vs open-drain
     pub const OUTDRV: u8 = 0x04;
     /// Outputs change on ACK vs STOP 
     pub const OCH: u8 = 0x08;
@@ -74,13 +74,13 @@ pub mod mode2 {
 /// Int. osc. frequency in datasheet
 pub const FREQUENCY_OSCILLATOR: u32 = 25_000_000;
 
-/// minimum prescale value
+/// Minimum prescale value
 pub const PRESCALE_MIN: u8 = 0x03;
 
 /// Maximum prescale value
 pub const PRESCALE_MAX: u8 = 0xFF;
 
-/// A Representation of a PCA9685 Chip
+/// A representation of a PCA9685 Chip
 pub struct PCA9685 {
     address: u8,
     bus: i2c::I2c,
@@ -157,13 +157,13 @@ impl PCA9685 {
         Ok(())
     }
 
-    /// Set the prescale value from a given frequency
+    /// Set the prescale value from a given frequency.
     /// # Warnings
     /// - In order to change the prescale, the chip must be put into sleep.
     /// Make sure that anything important be safetied before use.
     /// 
-    /// - This function tries to be as close as possible to the given frequency.
-    pub async fn set_prescale_fr(&mut self, frequency: u16) -> Result<(), i2c::Error> {
+    /// - This function tries to be as close as possible to the given frequency, but it is not 100% accurate.
+    pub async fn set_prescale_fr(&mut self, frequency: u16, restart: bool) -> Result<(), i2c::Error> {
         self.sleep()?;
         //Get the old prescale for debug purposes
         let mut prescale_buf = vec![0];
@@ -190,7 +190,7 @@ impl PCA9685 {
         }
         
         //Start the chip again
-        self.start().await?;
+        if restart { self.start().await? };
 
         Ok(())
     }
@@ -207,7 +207,7 @@ impl PCA9685 {
 
     /// Set the pulse-widths for a channel.
     /// Channels range from 0 - 15.
-    /// Since the device uses 12bit accuracy,
+    /// Since the device uses 12-bit accuracy,
     /// the tuples are arranged as (most_significant, least_significant)
     /// # Panics
     /// The channel must be less than 16.
@@ -251,10 +251,11 @@ impl PCA9685 {
         Ok(())
     }
 
-    /// Set the output mode of the chip
-    /// Options: Open-Drain or Totem pole.
-    /// # Default
-    /// Totem pole
+    /// Set the output mode of the chip.
+    /// 
+    /// Options:
+    /// - Open-Drain
+    /// - Totem pole <-- chip default
     /// # Warnings
     /// - LEDS with built in zener diodes should only be 
     /// driven in open drain mode.
