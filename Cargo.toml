@@ -8,6 +8,7 @@ keywords = ["i2c", "pwm"]
 description = "A library for communicating to a PCA9685 Chip for Raspberry Pi."
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 documentation = "https://team3487-redpriderobotics.github.io/pca9685_lib/pca9685_lib/"
+readme = "README.md"
 
 [dependencies]
 rppal = "0.11.3"
