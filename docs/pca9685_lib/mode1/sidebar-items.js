@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["AI","Auto-Increment"],["ALLCALL","Respond to LED All Call I2C-bus address"],["EXTCLK","Use EXTCLK pin clock"],["RESTART","Restart Enabled"],["SLEEP","Low power mode. Oscillator off"],["SUB1","Respond to I2C-bus subaddress 1"],["SUB2","Respond to I2C-bus subaddress 2 "],["SUB3","Respond to I2C-bus subaddress 3"]]});

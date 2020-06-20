@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["INVRT","Output logic state inverted"],["OCH","Outputs change on ACK vs STOP "],["OUTDRV","Totem pole structure vs open-drain"],["OUTNE_0","Active LOW output enable input"],["OUTNE_1","Active LOW output enable input - high impedence"]]});
