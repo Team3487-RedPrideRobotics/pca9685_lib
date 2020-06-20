@@ -1,4 +1,4 @@
-# pca9685_lib 
+# pca9685_lib ![Version Badge](https://img.shields.io/crates/v/pca9685_lib?style=for-the-badge)
 Raspberry Pi drivers for the PCA9685
 [Documentation](https://team3487-redpriderobotics.github.io/pca9685_lib/pca9685_lib/)
 
